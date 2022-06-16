@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/Shopify/sarama"
 	"github.com/jokereven/golang-log-collection/logagent/kafka"
+	"github.com/jokereven/golang-log-collection/logagent/tailf"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/ini.v1"
+	"time"
 )
 
 // 日志收集客户端
@@ -17,12 +20,35 @@ type AppConfig struct {
 }
 
 type KafkaConfig struct {
-	Address string `ini:"address"`
-	Topic   string `ini:"topic"`
+	Address     string `ini:"address"`
+	Topic       string `ini:"topic"`
+	MsgChanSize int64  `ini:"msg_chan_size"`
 }
 
 type CollectConfig struct {
 	LogFilePath string `ini:"log_file_path"`
+}
+
+// run 真正的业务逻辑
+func run() (err error) {
+	// Tails ->log -> Client -> kafka
+	for {
+		line, ok := <-tailf.Tails.Lines
+		if !ok {
+			logrus.Warning("tail file close reopen, filename:%s\n", tailf.Tails.Filename)
+			time.Sleep(time.Second)
+			continue
+		}
+		// ? 具体业务逻辑, 将消息发送到kafka
+		// 利用通道将同步的代码改成异步
+		// 将每一行的消息发送到kafka
+		msg := &sarama.ProducerMessage{}
+		msg.Topic = "gnorev"
+		msg.Value = sarama.StringEncoder(line.Text)
+		// msg -> chan
+		kafka.MsgChan <- msg
+	}
+	return
 }
 
 func main() {
@@ -47,12 +73,26 @@ func main() {
 		return
 	}
 	fmt.Printf("p: %#v\n", p)
-	// 连接kafka
-	err = kafka.Init([]string{p.KafkaConfig.Address})
+	// 1. 初始化连接kafka(做好准备工作)
+	err = kafka.Init([]string{p.KafkaConfig.Address}, p.KafkaConfig.MsgChanSize)
 	if err != nil {
 		logrus.Error("init connection kafka failed, err: ", err)
 		return
 	}
 	logrus.Info("init connection kafka success")
-	// 初始化tail
+
+	// 2. 根据配置文件中的日志初始化tail
+	err = tailf.Init(p.CollectConfig.LogFilePath)
+	if err != nil {
+		logrus.Error("init tailf failed, err: ", err)
+		return
+	}
+	logrus.Info("init tailf success")
+
+	// 3. 把日志通过sarama发送包kafka
+	err = run()
+	if err != nil {
+		logrus.Error("run failed err:", err)
+		return
+	}
 }

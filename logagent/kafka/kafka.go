@@ -7,10 +7,11 @@ import (
 )
 
 var (
-	Client sarama.SyncProducer
+	client  sarama.SyncProducer
+	MsgChan chan *sarama.ProducerMessage
 )
 
-func Init(address []string) (err error) {
+func Init(address []string, ChanSize int64) (err error) {
 	// 1. 生产者配置
 	// config
 	config := sarama.NewConfig()
@@ -23,11 +24,31 @@ func Init(address []string) (err error) {
 	config.Producer.Return.Successes = true
 
 	// 2. 连接kafka
-	Client, err = sarama.NewSyncProducer(address, config)
+	client, err = sarama.NewSyncProducer(address, config)
 	if err != nil {
 		logrus.Error("producer closed, err:", err)
 		fmt.Println("producer closed, err:", err)
 		return
 	}
+	// 3. 初始化MsgChan
+	MsgChan = make(chan *sarama.ProducerMessage, ChanSize)
+	// 起一个后台的goroutine从msgchan中读取数据
+	go SengMsg()
 	return
+}
+
+// SengMsg 从MsgChan中读取msg发送到kafka
+func SengMsg() {
+	for {
+		select {
+		case msg := <-MsgChan:
+			// 4. 发送消息
+			pid, offset, err := client.SendMessage(msg)
+			if err != nil {
+				logrus.Warning("send msg failed, err:", err)
+				return
+			}
+			logrus.Infof("pid:%v offset:%v\n", pid, offset)
+		}
+	}
 }
