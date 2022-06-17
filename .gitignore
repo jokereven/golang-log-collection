@@ -2,3 +2,7 @@
 .idea
 # Nodejs
 node_modules
+# build
+*.exe
+# logger
+*.log
