@@ -17,7 +17,12 @@ go操作etcd: [https://www.liwenzhou.com/posts/Go/go_etcd/](https://www.liwenzho
 ```shell
 SET ETCDCIL_API = 3 // 之后才可以使用set命令
 ```
+
 ![](./20220617164223.png)
+
+```bash
+etcdctl.exe --endpoints=127.0.0.1:2379 put jokereven "so cool"
+```
 
 ### etcd一般都是以集群的形式存在的一般为奇数（3,5,7,9(原因是应为leader挂掉之后, follow便于选举出新的leader)）
 

@@ -8,7 +8,7 @@ import (
 
 var (
 	client  sarama.SyncProducer
-	MsgChan chan *sarama.ProducerMessage
+	msgChan chan *sarama.ProducerMessage
 )
 
 func Init(address []string, ChanSize int64) (err error) {
@@ -30,18 +30,18 @@ func Init(address []string, ChanSize int64) (err error) {
 		fmt.Println("producer closed, err:", err)
 		return
 	}
-	// 3. 初始化MsgChan
-	MsgChan = make(chan *sarama.ProducerMessage, ChanSize)
-	// 起一个后台的goroutine从msgchan中读取数据
+	// 3. 初始化msgChan
+	msgChan = make(chan *sarama.ProducerMessage, ChanSize)
+	// 起一个后台的goroutine从msgChan中读取数据
 	go SengMsg()
 	return
 }
 
-// SengMsg 从MsgChan中读取msg发送到kafka
+// SengMsg 从msgChan中读取msg发送到kafka
 func SengMsg() {
 	for {
 		select {
-		case msg := <-MsgChan:
+		case msg := <-msgChan:
 			// 4. 发送消息
 			pid, offset, err := client.SendMessage(msg)
 			if err != nil {
@@ -51,4 +51,8 @@ func SengMsg() {
 			logrus.Infof("pid:%v offset:%v\n", pid, offset)
 		}
 	}
+}
+
+func MsgChan(msg *sarama.ProducerMessage) {
+	msgChan <- msg
 }

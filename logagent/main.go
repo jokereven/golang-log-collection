@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/Shopify/sarama"
+	"github.com/jokereven/golang-log-collection/logagent/etcd"
 	"github.com/jokereven/golang-log-collection/logagent/kafka"
 	"github.com/jokereven/golang-log-collection/logagent/tailf"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/ini.v1"
+	"strings"
 	"time"
 )
 
@@ -16,13 +18,18 @@ import (
 
 type AppConfig struct {
 	KafkaConfig   `ini:"kafka"`
+	EtcdConfig    `ini:"etcd"`
 	CollectConfig `ini:"collect"`
 }
 
 type KafkaConfig struct {
 	Address     string `ini:"address"`
-	Topic       string `ini:"topic"`
 	MsgChanSize int64  `ini:"msg_chan_size"`
+}
+
+type EtcdConfig struct {
+	Address    string `ini:"address"`
+	CollectKey string `ini:"collect_key"`
 }
 
 type CollectConfig struct {
@@ -39,6 +46,11 @@ func run() (err error) {
 			time.Sleep(time.Second)
 			continue
 		}
+		// 当日志文件为空行就不将消息发送到kafka
+		if len(strings.Trim(line.Text, "\r")) == 0 {
+			logrus.Info("出现空行直接跳过...")
+			continue
+		}
 		// ? 具体业务逻辑, 将消息发送到kafka
 		// 利用通道将同步的代码改成异步
 		// 将每一行的消息发送到kafka
@@ -46,7 +58,7 @@ func run() (err error) {
 		msg.Topic = "gnorev"
 		msg.Value = sarama.StringEncoder(line.Text)
 		// msg -> chan
-		kafka.MsgChan <- msg
+		kafka.MsgChan(msg)
 	}
 	return
 }
@@ -80,6 +92,22 @@ func main() {
 		return
 	}
 	logrus.Info("init connection kafka success")
+
+	// 通过etcd加载日志收集配置信息
+	// 初始化etcd连接
+	// 从etcd拉取日志收集配置项
+	err = etcd.Init([]string{p.EtcdConfig.Address})
+	if err != nil {
+		logrus.Error("init etcd failed, err: ", err)
+		return
+	}
+
+	allConf, err := etcd.GetConf(p.EtcdConfig.CollectKey)
+	if err != nil {
+		logrus.Errorf("get conf from etcd failed, err:%v ", err)
+		return
+	}
+	fmt.Println(allConf)
 
 	// 2. 根据配置文件中的日志初始化tail
 	err = tailf.Init(p.CollectConfig.LogFilePath)

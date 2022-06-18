@@ -6,10 +6,12 @@ require (
 	github.com/Shopify/sarama v1.34.1
 	github.com/hpcloud/tail v1.0.0
 	github.com/sirupsen/logrus v1.8.1
+	go.etcd.io/etcd v2.3.8+incompatible
 	gopkg.in/ini.v1 v1.66.6
 )
 
 require (
+	github.com/coreos/etcd v2.3.8+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
