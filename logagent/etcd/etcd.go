@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jokereven/golang-log-collection/logagent/common"
 	"github.com/sirupsen/logrus"
 	"go.etcd.io/etcd/clientv3"
 	"time"
@@ -12,11 +13,6 @@ import (
 var (
 	Client *clientv3.Client
 )
-
-type Config struct {
-	Path  string `json:"path"`
-	Topic string `json:"topic"`
-}
 
 func Init(addr []string) (err error) {
 	Client, err = clientv3.New(clientv3.Config{
@@ -33,7 +29,7 @@ func Init(addr []string) (err error) {
 	return
 }
 
-func GetConf(key string) (ConfigList []*Config, err error) {
+func GetConf(key string) (ConfigList []*common.Config, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
 	resp, err := Client.Get(ctx, key)

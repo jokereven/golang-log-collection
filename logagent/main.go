@@ -2,14 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/Shopify/sarama"
 	"github.com/jokereven/golang-log-collection/logagent/etcd"
 	"github.com/jokereven/golang-log-collection/logagent/kafka"
 	"github.com/jokereven/golang-log-collection/logagent/tailf"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/ini.v1"
-	"strings"
-	"time"
 )
 
 // 日志收集客户端
@@ -37,7 +34,7 @@ type CollectConfig struct {
 }
 
 // run 真正的业务逻辑
-func run() (err error) {
+/*func run() (err error) {
 	// Tails ->log -> Client -> kafka
 	for {
 		line, ok := <-tailf.Tails.Lines
@@ -61,6 +58,11 @@ func run() (err error) {
 		kafka.MsgChan(msg)
 	}
 	return
+}*/
+
+// 防止进程退出
+func run() {
+	select {}
 }
 
 func main() {
@@ -110,7 +112,8 @@ func main() {
 	fmt.Println(allConf)
 
 	// 2. 根据配置文件中的日志初始化tail
-	err = tailf.Init(p.CollectConfig.LogFilePath)
+	//err = tailf.Init(p.CollectConfig.LogFilePath)
+	err = tailf.Init(allConf) // 把从etcd中读取到的配置传到Init中
 	if err != nil {
 		logrus.Error("init tailf failed, err: ", err)
 		return
@@ -118,9 +121,10 @@ func main() {
 	logrus.Info("init tailf success")
 
 	// 3. 把日志通过sarama发送包kafka
-	err = run()
-	if err != nil {
-		logrus.Error("run failed err:", err)
-		return
-	}
+	/*	err = run()
+		if err != nil {
+			logrus.Error("run failed err:", err)
+			return
+		}*/
+	run()
 }
