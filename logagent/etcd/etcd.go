@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jokereven/golang-log-collection/logagent/common"
+	"github.com/jokereven/golang-log-collection/logagent/tailf"
 	"github.com/sirupsen/logrus"
 	"go.etcd.io/etcd/clientv3"
 	"time"
@@ -50,4 +51,21 @@ func GetConf(key string) (ConfigList []*common.Config, err error) {
 		return
 	}
 	return
+}
+
+func WatchConf(key string) {
+	// watch key: key change
+	rch := Client.Watch(context.Background(), key) // <-chan WatchResponse
+	var newConf []common.Config
+	for resp := range rch {
+		for _, ev := range resp.Events {
+			fmt.Printf("Type: %s Key:%s Value:%s\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
+			err := json.Unmarshal(ev.Kv.Value, &newConf)
+			if err != nil {
+				logrus.Errorf("json Unmarshal new conf failed, err: %s", err)
+				continue
+			}
+			tailf.SendNewConf(newConf)
+		}
+	}
 }

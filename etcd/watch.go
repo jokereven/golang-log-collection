@@ -28,5 +28,4 @@ func main() {
 			fmt.Printf("Type: %s Key:%s Value:%s\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
 		}
 	}
-
 }

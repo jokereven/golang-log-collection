@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+var (
+	confChan chan []common.Config
+)
+
 type tailTack struct {
 	path  string
 	topic string
@@ -81,5 +85,14 @@ func Init(allConf []*common.Config) (err error) {
 		// tt 创建成功就去收集任务
 		go tt.run()
 	}
+	// 初始化confChan
+	confChan = make(chan []common.Config) // 阻塞的channel
+	newConf := <-confChan
+	logrus.Infof("get new conf from etcd: %v", newConf)
+	// 等待新配置的到来
 	return
+}
+
+func SendNewConf(newConf []common.Config) {
+	confChan <- newConf
 }

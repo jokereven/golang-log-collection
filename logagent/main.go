@@ -111,6 +111,9 @@ func main() {
 	}
 	fmt.Println(allConf)
 
+	// 监控 etcd p.EtcdConfig.CollectKey 配置项的变化
+	go etcd.WatchConf(p.EtcdConfig.CollectKey)
+
 	// 2. 根据配置文件中的日志初始化tail
 	//err = tailf.Init(p.CollectConfig.LogFilePath)
 	err = tailf.Init(allConf) // 把从etcd中读取到的配置传到Init中
