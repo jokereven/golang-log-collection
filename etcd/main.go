@@ -27,8 +27,9 @@ func main() {
 	// put
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	// 向etcd中发送json格式数据 json在线工具（json.cn）
-	str := `[{"path":"./log01.log","topic":"web01_log"},{"path":"./log02.log","topic":"web02_log"}]`
+	//str := `[{"path":"./log01.log","topic":"web01_log"},{"path":"./log02.log","topic":"web02_log"}]`
 	//str := `[{"path":"./log01.log","topic":"web01_log"},{"path":"./log02.log","topic":"web02_log"},{"path":"./log03.log","topic":"web03_log"}]`
+	str := `[{"path":"./log01.log","topic":"web01_log"},{"path":"./log02.log","topic":"web02_log"},{"path":"./log03.log","topic":"web03_log"},{"path":"./log04.log","topic":"web04_log"}]`
 	_, err = cli.Put(ctx, "etcd_collect_conf", str)
 	cancel()
 	if err != nil {

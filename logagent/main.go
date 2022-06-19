@@ -87,6 +87,7 @@ func main() {
 		return
 	}
 	fmt.Printf("p: %#v\n", p)
+
 	// 1. 初始化连接kafka(做好准备工作)
 	err = kafka.Init([]string{p.KafkaConfig.Address}, p.KafkaConfig.MsgChanSize)
 	if err != nil {

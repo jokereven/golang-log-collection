@@ -3,15 +3,10 @@ package tailf
 import (
 	"github.com/Shopify/sarama"
 	"github.com/hpcloud/tail"
-	"github.com/jokereven/golang-log-collection/logagent/common"
 	"github.com/jokereven/golang-log-collection/logagent/kafka"
 	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
-)
-
-var (
-	confChan chan []common.Config
 )
 
 type tailTack struct {
@@ -66,33 +61,4 @@ func (t *tailTack) run() {
 		kafka.MsgChan(msg)
 	}
 	return
-}
-
-func Init(allConf []*common.Config) (err error) {
-	// 文件名
-	// 配置信息
-	// allConf 里面存了若干个日志的收集项
-	// 对应没一个日志收集项创建一个对应Tails
-
-	for _, conf := range allConf {
-		tt := NewTailTask(conf.Path, conf.Topic)
-		err = tt.Init()
-		if err != nil {
-			logrus.Errorf("create Tails for path: %s, failed err:%v", conf.Path, err)
-			continue
-		}
-		logrus.Infof("create a tail task for path:%s success", conf.Path)
-		// tt 创建成功就去收集任务
-		go tt.run()
-	}
-	// 初始化confChan
-	confChan = make(chan []common.Config) // 阻塞的channel
-	newConf := <-confChan
-	logrus.Infof("get new conf from etcd: %v", newConf)
-	// 等待新配置的到来
-	return
-}
-
-func SendNewConf(newConf []common.Config) {
-	confChan <- newConf
 }

@@ -30,7 +30,7 @@ func Init(addr []string) (err error) {
 	return
 }
 
-func GetConf(key string) (ConfigList []*common.Config, err error) {
+func GetConf(key string) (ConfigList []common.Config, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
 	resp, err := Client.Get(ctx, key)
@@ -45,6 +45,7 @@ func GetConf(key string) (ConfigList []*common.Config, err error) {
 	fmt.Println(resp.Kvs)
 	ret := resp.Kvs[0]
 	//ret.Value json格式数据
+	fmt.Println(ret.Value)
 	err = json.Unmarshal(ret.Value, &ConfigList)
 	if err != nil {
 		logrus.Error("json Unmarshal failed err: ", err)
@@ -55,17 +56,19 @@ func GetConf(key string) (ConfigList []*common.Config, err error) {
 
 func WatchConf(key string) {
 	// watch key: key change
-	rch := Client.Watch(context.Background(), key) // <-chan WatchResponse
-	var newConf []common.Config
-	for resp := range rch {
-		for _, ev := range resp.Events {
-			fmt.Printf("Type: %s Key:%s Value:%s\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
-			err := json.Unmarshal(ev.Kv.Value, &newConf)
-			if err != nil {
-				logrus.Errorf("json Unmarshal new conf failed, err: %s", err)
-				continue
+	for {
+		rch := Client.Watch(context.Background(), key) // <-chan WatchResponse
+		var newConf []common.Config
+		for resp := range rch {
+			for _, ev := range resp.Events {
+				fmt.Printf("Type: %s Key:%s Value:%s\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
+				err := json.Unmarshal(ev.Kv.Value, &newConf)
+				if err != nil {
+					logrus.Errorf("json Unmarshal new conf failed, err: %s", err)
+					continue
+				}
+				tailf.SendNewConf(newConf)
 			}
-			tailf.SendNewConf(newConf)
 		}
 	}
 }
