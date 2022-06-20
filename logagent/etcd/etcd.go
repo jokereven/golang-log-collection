@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/coreos/etcd/storage/storagepb"
 	"github.com/jokereven/golang-log-collection/logagent/common"
 	"github.com/jokereven/golang-log-collection/logagent/tailf"
 	"github.com/sirupsen/logrus"
@@ -58,10 +59,15 @@ func WatchConf(key string) {
 	// watch key: key change
 	for {
 		rch := Client.Watch(context.Background(), key) // <-chan WatchResponse
-		var newConf []common.Config
 		for resp := range rch {
 			for _, ev := range resp.Events {
 				fmt.Printf("Type: %s Key:%s Value:%s\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
+				var newConf []common.Config
+				if ev.Type == storagepb.DELETE {
+					// 删除操作
+					tailf.SendNewConf(newConf)
+					return
+				}
 				err := json.Unmarshal(ev.Kv.Value, &newConf)
 				if err != nil {
 					logrus.Errorf("json Unmarshal new conf failed, err: %s", err)

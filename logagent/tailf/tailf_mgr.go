@@ -69,7 +69,23 @@ func (t *TailTaskMgr) watch() {
 			// 在创建（NewTailTask时创建一个管理者对TailTask进行管理）
 			t.tailTackMap[tt.path] = tt // 登记tailTask, 方便后续管理
 			go tt.run()
-			// 3. 原来有现在没有就停掉这个 TailTask
+		}
+		// 3. 原来有现在没有就停掉这个 TailTask
+		// 找出tailTackMap中有但是newConf中没有的tailTask, 将他们都停掉.
+		for key, task := range t.tailTackMap {
+			var found bool
+			for _, conf := range newConf {
+				if key == conf.Path {
+					found = true
+					break
+				}
+			}
+			if !found {
+				// 这个tailTask要停止掉了
+				logrus.Infof("the tailtask will to stop path:%s", task.path)
+				delete(t.tailTackMap, key)
+				task.cancel()
+			}
 		}
 	}
 }
