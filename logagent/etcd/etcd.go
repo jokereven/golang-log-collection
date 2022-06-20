@@ -65,6 +65,7 @@ func WatchConf(key string) {
 				var newConf []common.Config
 				if ev.Type == storagepb.DELETE {
 					// 删除操作
+					fmt.Println("listening to the etcd operate is DELETE")
 					tailf.SendNewConf(newConf)
 					return
 				}

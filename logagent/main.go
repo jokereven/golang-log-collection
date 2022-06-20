@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/jokereven/golang-log-collection/logagent/common"
 	"github.com/jokereven/golang-log-collection/logagent/etcd"
 	"github.com/jokereven/golang-log-collection/logagent/kafka"
 	"github.com/jokereven/golang-log-collection/logagent/tailf"
@@ -66,6 +67,13 @@ func run() {
 }
 
 func main() {
+	// -1. 获取本机ip, 为之后etcd的collect_key 跟ip关联打下基础
+	ip, err := common.GetLocalCpIp()
+	if err != nil {
+		logrus.Errorf("get local computer ip failed, err:%v", err)
+		return
+	}
+
 	// 0. 读取配置文件 `go-ini`
 	//（1）通过直接加载配置文件的方法
 	/*	cfg, err := ini.Load("./conf/config.ini")
@@ -80,7 +88,7 @@ func main() {
 		fmt.Println(LogFilePath)*/
 	//（2）通过结构体映射的方法
 	p := new(AppConfig)
-	err := ini.MapTo(p, "./conf/config.ini")
+	err = ini.MapTo(p, "./conf/config.ini")
 	if err != nil {
 		logrus.Error("read config file failed, err: ", err)
 		fmt.Println("read config file failed, err: ", err)
@@ -105,7 +113,8 @@ func main() {
 		return
 	}
 
-	allConf, err := etcd.GetConf(p.EtcdConfig.CollectKey)
+	collectKey := fmt.Sprintf(p.EtcdConfig.CollectKey, ip)
+	allConf, err := etcd.GetConf(collectKey)
 	if err != nil {
 		logrus.Errorf("get conf from etcd failed, err:%v ", err)
 		return
@@ -113,7 +122,7 @@ func main() {
 	fmt.Println(allConf)
 
 	// 监控 etcd p.EtcdConfig.CollectKey 配置项的变化
-	go etcd.WatchConf(p.EtcdConfig.CollectKey)
+	go etcd.WatchConf(collectKey)
 
 	// 2. 根据配置文件中的日志初始化tail
 	//err = tailf.Init(p.CollectConfig.LogFilePath)
