@@ -3,6 +3,6 @@
 # Nodejs
 node_modules
 # build
-*.exe
+# *.exe
 # logger
 *.log
