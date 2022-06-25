@@ -42,7 +42,12 @@ func main() {
 		return
 	}
 	fmt.Println("connect to etcd success")
-	defer cli.Close()
+	defer func(cli *clientv3.Client) {
+		err := cli.Close()
+		if err != nil {
+			return
+		}
+	}(cli)
 
 	// put
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)

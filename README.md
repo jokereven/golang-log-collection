@@ -12,3 +12,5 @@ https://www.bilibili.com/video/BV1Df4y1C7o5/
 课上源码:
 链接: https://pan.baidu.com/s/1eTmTyQRDhGVmOGkxtv0xvQ 
 提取码: 7ijh 复制这段内容后打开百度网盘手机App，操作更方便哦
+
+Github @Q1mi: [https://github.com/Q1mi/logagent](https://github.com/Q1mi/logagent)

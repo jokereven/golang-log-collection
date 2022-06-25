@@ -14,7 +14,8 @@ func run() {
 	}
 }
 
-func main() {
+// Random 生成随机中文名添加到es中
+func Random() {
 	ticker := time.Tick(1 * time.Second)
 	for {
 		<-ticker
